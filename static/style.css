@@ -1,0 +1,145 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: sans-serif;
+}
+
+.headerbar {
+    background-color: #222;
+    vertical-align: middle;
+    padding: 12px;
+    display: grid;
+    grid-template-columns: min-content min-content min-content min-content auto min-content;
+    grid-gap: 8px;
+}
+
+.headerbar_title {
+    color: #fff;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.username_container {
+    text-align: right;
+}
+
+.headerbar_button {
+    color: #fff;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+#username_change {
+    text-decoration: none;
+    color: #fff;
+}
+
+#canvas {
+    position: absolute;
+    image-rendering: pixelated;
+}
+
+#canvas_scroll {
+    position: absolute;
+    /* overflow: hidden; */
+}
+
+#canvas_container {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    height: calc(100% - 48px);
+    touch-action: none;
+    background-color: #f0f0f0;
+}
+
+#selector {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 16px;
+    height: 16px;
+    border: 1px solid;
+    box-sizing: border-box;
+}
+
+#placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 16px;
+    height: 16px;
+    border: 1px solid;
+    box-sizing: border-box;
+}
+
+#place_pixel {
+    position: absolute;
+    width: 100px;
+    height: 42px;
+    left: calc(50% - 50px);
+    bottom: 128px;
+}
+
+#palette {
+    position: absolute;
+    background-color: #fff;
+    border: 2px solid #5e5e5e;
+    border-radius: 12px;
+    padding: 12px;
+    left: 12px;
+    bottom: 12px;
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+    max-width: 400px;
+}
+
+.color {
+    width: 32px;
+    height: 32px;
+    border: 2px solid #5e5e5e;
+    border-radius: 16px;
+    /* flex: 32px; */
+}
+
+.selected_color {
+    border: 3px solid skyblue;
+}
+
+.modal {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    padding: 32px;
+    background-color: #fff;
+    border-radius: 12px;
+    display: grid;
+    grid-gap: 8px;
+    grid-template-rows: min-content min-content;
+    grid-template-columns: 50% 50%;
+}
+
+.modal_btn {
+    padding: 4px;
+}
+
+#username_change_screen {
+    display: none;
+}
+
+#username_field {
+    grid-column-start: 1;
+    grid-column-end: 3;
+}
+
+#stat {
+    color: #fff;
+    font-weight: bold;
+}
