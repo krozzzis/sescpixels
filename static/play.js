@@ -284,25 +284,38 @@ if (cnv_cnt != null) {
             if (evStack.length == 2) {
                 const distance = Math.sqrt(Math.pow(evStack[0].clientX-evStack[1].clientX, 2) + Math.pow(evStack[0].clientY-evStack[1].clientY, 2));   
                 if (zoomDiff > 0) {
-                    let delta = (distance - zoomDiff) / 10;
-                    // if (distance < zoomDiff)
-                    //     delta = -delta;
-                    document.getElementById("stat").innerText = delta;
-                    field.scale += delta;
-                    field.scale = Math.min(field.max_scale, Math.max(field.min_scale, field.scale));
-                    updateCanvasTransform();
-                    updatePlaceholderTransform();
-                    updateSelectorTransform([e.clientX, e.clientY]);
+                    let delta = Math.pow(1, (distance - zoomDiff) / 300);
+                    if (distance < zoomDiff)
+                        delta = -delta;
+
+                    if (Math.min(field.max_scale, Math.max(field.min_scale, field.scale+delta)) != field.scale) {
+                        const mx = e.clientX - field.offset[0];
+                        const my = e.clientY - field.offset[1] - cnv_cnt.offsetTop 
+                        const ns = Math.min(field.max_scale, Math.max(field.min_scale, field.scale+delta));
+                        const nsx = field.width*ns;
+                        const nsy = field.height*ns;
+                        const sx = field.width*field.scale;
+                        const sy = field.height*field.scale;
+                        field.offset[0] -= (nsx - sx) * mx/sx;
+                        field.offset[1] -= (nsy - sy) * my/sy;
+
+                        field.scale += delta;
+                        field.scale = Math.min(field.max_scale, Math.max(field.min_scale, field.scale));
+                        updateCanvasTransform();
+                        updatePlaceholderTransform();
+                        updateSelectorTransform([e.clientX, e.clientY]);
+                    }
                 }
                 zoomDiff = distance;
-            }
-            if (dragging) {
-                field.offset[0] += evStack[0].clientX - drag_offset[0];
-                field.offset[1] += evStack[0].clientY - drag_offset[1];
-                drag_offset[0] = evStack[0].clientX;
-                drag_offset[1] = evStack[0].clientY;
-                updateCanvasTransform();
-                updatePlaceholderTransform();
+            } else {
+                if (dragging) {
+                    field.offset[0] += evStack[0].clientX - drag_offset[0];
+                    field.offset[1] += evStack[0].clientY - drag_offset[1];
+                    drag_offset[0] = evStack[0].clientX;
+                    drag_offset[1] = evStack[0].clientY;
+                    updateCanvasTransform();
+                    updatePlaceholderTransform();
+                }
             }
         }
     };
@@ -312,14 +325,14 @@ if (cnv_cnt != null) {
             let delta = Math.floor(Math.pow(2, Math.abs(e.wheelDelta*speed)));
             if (e.wheelDelta < 0)
                 delta = -delta;
-            // field.offset[0] -= Math.floor((field.width*(field.scale + delta) - field.width*field.scale) * (e.clientX - field.offset[0]) / (field.width*field.scale));
-            // field.offset[1] -= Math.floor((field.height*(field.scale + delta) - field.height*field.scale) * (e.clientY - field.offset[1]) / (field.height*field.scale));
             const mx = e.clientX - field.offset[0];
             const my = e.clientY - field.offset[1] - cnv_cnt.offsetTop 
-            // document.getElementById("stat").innerText = `${mx} ${my}`;
-            field.offset[0] -= mx/(field.scale + delta) - mx/field.scale;
-            field.offset[1] -= my/(field.scale + delta) - my/field.scale;
-            // document.getElementById("stat").innerText = (Math.floor((field.width*field.scale - field.width*field.scale) * (e.clientX - field.offset[0]) / (field.width*field.scale)));
+            const nsx = field.width*(field.scale + delta);
+            const nsy = field.height*(field.scale + delta);
+            const sx = field.width*field.scale;
+            const sy = field.height*field.scale;
+            field.offset[0] -= (nsx - sx) * mx/sx;
+            field.offset[1] -= (nsy - sy) * my/sy;
             field.scale += delta;
             field.scale = Math.min(field.max_scale, Math.max(field.min_scale, field.scale));
             updateCanvasTransform();
