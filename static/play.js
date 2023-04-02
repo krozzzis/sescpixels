@@ -280,23 +280,21 @@ if (cnv_cnt != null) {
             } else {
                 selector.style.display = "none";
             }
-
             // Zoom gesture
             if (evStack.length == 2) {
-                const curDiff = Math.sqrt(Math.pow(2, evStack[0].clientX/100-evStack[1].clientX/100)/ +
-                    Math.pow(2, evStack[0].clientY/100-evStack[1].clientY/100));   
+                const distance = Math.sqrt(Math.pow(evStack[0].clientX-evStack[1].clientX, 2) + Math.pow(evStack[0].clientY-evStack[1].clientY, 2));   
                 if (zoomDiff > 0) {
-                    let delta = Math.floor(Math.pow(1.5, curDiff*0.02));
-                    if (curDiff < zoomDiff)
-                        delta = -delta;
-                    document.getElementById("stat").innerText = Math.floor(delta);
-                    field.scale -= delta;
+                    let delta = (distance - zoomDiff) / 10;
+                    // if (distance < zoomDiff)
+                    //     delta = -delta;
+                    document.getElementById("stat").innerText = delta;
+                    field.scale += delta;
                     field.scale = Math.min(field.max_scale, Math.max(field.min_scale, field.scale));
                     updateCanvasTransform();
                     updatePlaceholderTransform();
                     updateSelectorTransform([e.clientX, e.clientY]);
                 }
-                zoomDiff = curDiff;
+                zoomDiff = distance;
             }
             if (dragging) {
                 field.offset[0] += evStack[0].clientX - drag_offset[0];
@@ -317,10 +315,11 @@ if (cnv_cnt != null) {
             // field.offset[0] -= Math.floor((field.width*(field.scale + delta) - field.width*field.scale) * (e.clientX - field.offset[0]) / (field.width*field.scale));
             // field.offset[1] -= Math.floor((field.height*(field.scale + delta) - field.height*field.scale) * (e.clientY - field.offset[1]) / (field.height*field.scale));
             const mx = e.clientX - field.offset[0];
-            const my = e.clientY - field.offset[1];
+            const my = e.clientY - field.offset[1] - cnv_cnt.offsetTop 
+            // document.getElementById("stat").innerText = `${mx} ${my}`;
             field.offset[0] -= mx/(field.scale + delta) - mx/field.scale;
             field.offset[1] -= my/(field.scale + delta) - my/field.scale;
-            document.getElementById("stat").innerText = (Math.floor((field.width*field.scale - field.width*field.scale) * (e.clientX - field.offset[0]) / (field.width*field.scale)));
+            // document.getElementById("stat").innerText = (Math.floor((field.width*field.scale - field.width*field.scale) * (e.clientX - field.offset[0]) / (field.width*field.scale)));
             field.scale += delta;
             field.scale = Math.min(field.max_scale, Math.max(field.min_scale, field.scale));
             updateCanvasTransform();

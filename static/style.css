@@ -76,9 +76,15 @@ html, body {
     position: relative;
     overflow: hidden;
     width: 100%;
-    height: 100%;
     touch-action: none;
     background-color: #f0f0f0;
+}
+
+.canvas_play {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    height: calc(100% - 48px);
 }
 
 .header_view {
@@ -178,6 +184,10 @@ html, body {
 }
 
 #username_change_screen {
+    display: none;
+}
+
+#party_change_screen {
     display: none;
 }
 

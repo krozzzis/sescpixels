@@ -9,21 +9,19 @@
   <body>
     <header class="headerbar">
       <a class="headerbar_title" href="/play">SESCPixels</a>
-      <span class="headerbar_title">|</span>
+      <span class="headerbar_title" id="stat">|</span>
       <!-- <a class="headerbar_button" href="/play">Play</a> -->
       <!-- <a class="headerbar_button" href="/view">View</a> -->
       <span class="headerbar_title party_container">Party: <a id="party" href="#">NoParty</a></span>
       <span class="headerbar_title username_container">Username: <a id="username_change" href="#" class="username">User</a></span>
     </header>
-    <div id="app_play">
-      <div id="canvas_container">
+      <div id="canvas_container" class="canvas_play">
         <div id="canvas_scroll">
           <canvas id="canvas"></canvas>
         </div>
         <div id="selector"></div>
         <div id="placeholder"></div>
       </div>
-    </div>
     <div id="palette">
     </div>
     <button id="place_pixel">PLACE</button>
