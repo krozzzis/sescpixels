@@ -1,29 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Play PixelBattle</title>
+    <title>SESCPixels</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <link href="static/style.css" rel="stylesheet">
   </head>
   <body>
-    <header class="headerbar">
-      <a class="headerbar_title" href="/play">AbobaPixels</a>
-    </header>
-    <div id="canvas_container">
-      <div id="canvas_scroll">
-        <canvas id="canvas"></canvas>
+    <div id="app">    
+      <header class="headerbar header_view">
+        <a class="headerbar_title" href="/play">SESCPixels</a>
+        <span class="headerbar_title">|</span>
+        <span class="headerbar_title">Play at <a class="headerbar_title" id="url"></a></span>
+        <!-- <a class="headerbar_button" href="/play">Play</a> -->
+        <!-- <a class="headerbar_button" href="/view">View</a> -->
+      </header>
+
+      <div id="canvas_container" class="canvas_view">
+        <div id="canvas_scroll">
+          <canvas id="canvas"></canvas>
+        </div>
       </div>
-      <div id="selector"></div>
-      <div id="placeholder"></div>
+      <div id="rank_container" class="rank">
+        <table class="rank_table" id="users_rank">
+        </table>
+        <table class="rank_table" id="party_rank">
+        </table>
+      </div>
     </div>
-    <!-- <div id="palette"> -->
-    <!--   <!-- <button id="c_0" class="color"></button> --> -->
-    <!--   <!-- <button id="c_1" class="color"></button> --> -->
-    <!--   <!-- <button id="c_2" class="color"></button> --> -->
-    <!--   <!-- <button id="c_3" class="color"></button> --> -->
-    <!-- </div> -->
-    <!-- <button id="place_pixel">PLACE</button> -->
-    <script src="static/play.js"></script>
+    <script src="static/view.js"></script>
   </body>
 </html>

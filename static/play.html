@@ -1,38 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Play PixelBattle</title>
+    <title>Play SESCPixels</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <link href="static/style.css" rel="stylesheet">
   </head>
   <body>
     <header class="headerbar">
-      <a class="headerbar_title" href="/play">AbobaPixels</a>
+      <a class="headerbar_title" href="/play">SESCPixels</a>
       <span class="headerbar_title">|</span>
-      <a class="headerbar_button" href="/play">Play</a>
-      <a class="headerbar_button" href="/view">View</a>
+      <!-- <a class="headerbar_button" href="/play">Play</a> -->
+      <!-- <a class="headerbar_button" href="/view">View</a> -->
+      <span class="headerbar_title party_container">Party: <a id="party" href="#">NoParty</a></span>
       <span class="headerbar_title username_container">Username: <a id="username_change" href="#" class="username">User</a></span>
-      <span id="stat">0</span>
     </header>
-    <div id="canvas_container">
-      <div id="canvas_scroll">
-        <canvas id="canvas"></canvas>
+    <div id="app_play">
+      <div id="canvas_container">
+        <div id="canvas_scroll">
+          <canvas id="canvas"></canvas>
+        </div>
+        <div id="selector"></div>
+        <div id="placeholder"></div>
       </div>
-      <div id="selector"></div>
-      <div id="placeholder"></div>
     </div>
     <div id="palette">
-      <!-- <button id="c_0" class="color"></button> -->
-      <!-- <button id="c_1" class="color"></button> -->
-      <!-- <button id="c_2" class="color"></button> -->
-      <!-- <button id="c_3" class="color"></button> -->
     </div>
     <button id="place_pixel">PLACE</button>
     <div id="username_change_screen" class="modal">
-      <input id="username_field">
+      <input id="username_field" placeholder="User">
       <button id="username_update" class="modal_btn">Change username</button>
       <button id="cancel_username_update" class="modal_btn">Cancel</button>
+    </div>
+    <div id="party_change_screen" class="modal">
+      <div class="party_field_cont">
+        <input id="party_field" placeholder="NoParty">
+      </div>
+      <button id="party_update" class="modal_btn">Change party</button>
+      <button id="cancel_party_update" class="modal_btn">Cancel</button>
     </div>
     <script src="static/play.js"></script>
   </body>

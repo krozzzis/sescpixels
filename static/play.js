@@ -28,10 +28,14 @@ let selected_color = 0;
 // Screens:
 //   0 - default
 //   1 - change username
+//   2 - change party
 let screen = 0; 
 
-// Username
+// User identity
 let username = "User";
+let party = 'NoParty';
+
+let party_list = [];
 
 // Zoom gestures
 let evStack = [];
@@ -81,6 +85,17 @@ const updateHistoryHeight = async () => {
     }
 }
 
+const updatePartyList = async () => {
+    fetch("/api/get_party_list").then((resp) => {
+        if (resp.status == 200) {
+            resp.json().then((json) => {
+                party_list = json;
+                party_list.sort();
+            })
+        }
+    });
+}
+
 const updateFieldDelta = async () => {
     const resp = await fetch(`/api/get_events/${field.history_height}`);
     if (resp.status == 200) {
@@ -92,7 +107,8 @@ const updateFieldDelta = async () => {
                 if (ev.width != field.width || ev.height != field.height) {
                     updateField();
                 } else {
-                    field.pixels[ev.x + ev.y*field.width] = ev.color;
+                    if (ev.x < ev.width && ev.y < ev.height)
+                        field.pixels[ev.x + ev.y*field.width] = ev.color;
                 }
             }
         }
@@ -153,6 +169,7 @@ const putPixel = async (pos, color) => {
             y: pos[1],
             color: color,
             user: username,
+            party: party,
         })
     });
     if (resp.status != 200) {
@@ -330,9 +347,12 @@ const updateSelectedColor = () => {
 
 const changeScreens = () => {
     if (screen == 1) {
-        document.getElementById("username_change_screen").style.display = "block";
+        document.getElementById("username_change_screen").style.display = "grid";
+    } else if (screen == 2) {
+        document.getElementById("party_change_screen").style.display = "grid";
     } else {
         document.getElementById("username_change_screen").style.display = "none";
+        document.getElementById("party_change_screen").style.display = "none";
     }
 };
 
@@ -347,22 +367,60 @@ document.getElementById("place_pixel").onclick = () => {
 };
 
 document.getElementById("username_change").onclick = () => {
-    screen = 1;
-    document.getElementById("username_field").value = username;
-    changeScreens();
+    if (screen == 0) {
+        screen = 1;
+        document.getElementById("username_field").value = username;
+        changeScreens();
+    }
+};
+
+document.getElementById("party").onclick = () => {
+    if (screen == 0) {
+        screen = 2;
+        if (party == "NoParty")
+            document.getElementById("party_field").value = "";
+        else
+            document.getElementById("party_field").value = party;
+        changeScreens();
+    }
 };
 
 document.getElementById("username_update").onclick = () => {
     const name = document.getElementById("username_field").value.trim();
-    console.log(name);
-    if (name.match("[a-zA-Zа-яА-Я0-9\s]{4,15}")) {
+    if (name == "") {
+        screen = 0;
+        username = "User";
+        localStorage.setItem("username", "User");
+        document.getElementById("username_change").innerText = "User";
+        changeScreens();
+    } else if (name.match("[a-zA-Zа-яА-Я0-9\s]{4,16}") && name.length <= 16) {
         screen = 0;
         username = name;
         localStorage.setItem("username", name);
         document.getElementById("username_change").innerText = name;
         changeScreens();
     } else {
-        alert("Имя пользователя может содержать только буквы, цифры и пробелы. Длина - 4-15 символов.");
+        alert("Имя пользователя может содержать только буквы, цифры и пробелы. Длина - 4-16 символов.");
+    }
+};
+
+document.getElementById("party_update").onclick = () => {
+    const name = document.getElementById("party_field").value.trim();
+    if (name == "") {
+        screen = 0;
+        party = "NoParty";
+        localStorage.setItem("party", "NoParty");
+        document.getElementById("party").innerText = "NoParty";
+        changeScreens();
+    }
+    else if (name.match("[a-zA-Zа-яА-Я0-9\s]{4,16}") && name.length <= 16) {
+        screen = 0;
+        party = name;
+        localStorage.setItem("party", name);
+        document.getElementById("party").innerText = name;
+        changeScreens();
+    } else {
+        alert("Название партии может содержать только буквы, цифры и пробелы. Длина - 4-16 символов.");
     }
 };
 
@@ -371,24 +429,137 @@ document.getElementById("cancel_username_update").onclick = () => {
     changeScreens();
 };
 
+document.getElementById("cancel_party_update").onclick = () => {
+    screen = 0;
+    changeScreens();
+};
+
+function autocomplete(inp) {
+  /*the autocomplete function takes two arguments,
+  the text field element and an party_listay of possible autocompleted values:*/
+  var currentFocus;
+  /*execute a function when someone writes in the text field:*/
+  inp.addEventListener("input", function(e) {
+      var a, b, i, val = this.value;
+      /*close any already open lists of autocompleted values*/
+      closeAllLists();
+      if (!val) { return false;}
+      currentFocus = -1;
+      /*create a DIV element that will contain the items (values):*/
+      a = document.createElement("DIV");
+      a.setAttribute("id", this.id + "autocomplete-list");
+      a.setAttribute("class", "autocomplete-items");
+      /*append the DIV element as a child of the autocomplete container:*/
+      this.parentNode.appendChild(a);
+      /*for each item in the party_listay...*/
+      for (i = 0; i < party_list.length; i++) {
+        /*check if the item starts with the same letters as the text field value:*/
+        if (party_list[i].substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+          /*create a DIV element for each matching element:*/
+          b = document.createElement("DIV");
+          /*make the matching letters bold:*/
+          b.innerHTML = "<strong>" + party_list[i].substr(0, val.length) + "</strong>";
+          b.innerHTML += party_list[i].substr(val.length);
+          /*insert a input field that will hold the current party_listay item's value:*/
+          b.innerHTML += "<input type='hidden' value='" + party_list[i] + "'>";
+          /*execute a function when someone clicks on the item value (DIV element):*/
+              b.addEventListener("click", function(e) {
+              /*insert the value for the autocomplete text field:*/
+              inp.value = this.getElementsByTagName("input")[0].value;
+              /*close the list of autocompleted values,
+              (or any other open lists of autocompleted values:*/
+              closeAllLists();
+          });
+          a.appendChild(b);
+        }
+      }
+  });
+  /*execute a function presses a key on the keyboard:*/
+  inp.addEventListener("keydown", function(e) {
+      var x = document.getElementById(this.id + "autocomplete-list");
+      if (x) x = x.getElementsByTagName("div");
+      if (e.keyCode == 40) {
+        /*If the party_listow DOWN key is pressed,
+        increase the currentFocus variable:*/
+        currentFocus++;
+        /*and and make the current item more visible:*/
+        addActive(x);
+      } else if (e.keyCode == 38) { //up
+        /*If the party_listow UP key is pressed,
+        decrease the currentFocus variable:*/
+        currentFocus--;
+        /*and and make the current item more visible:*/
+        addActive(x);
+      } else if (e.keyCode == 13) {
+        /*If the ENTER key is pressed, prevent the form from being submitted,*/
+        e.preventDefault();
+        if (currentFocus > -1) {
+          /*and simulate a click on the "active" item:*/
+          if (x) x[currentFocus].click();
+        }
+      }
+  });
+  function addActive(x) {
+    /*a function to classify an item as "active":*/
+    if (!x) return false;
+    /*start by removing the "active" class on all items:*/
+    removeActive(x);
+    if (currentFocus >= x.length) currentFocus = 0;
+    if (currentFocus < 0) currentFocus = (x.length - 1);
+    /*add class "autocomplete-active":*/
+    x[currentFocus].classList.add("autocomplete-active");
+  }
+  function removeActive(x) {
+    /*a function to remove the "active" class from all autocomplete items:*/
+    for (var i = 0; i < x.length; i++) {
+      x[i].classList.remove("autocomplete-active");
+    }
+  }
+  function closeAllLists(elmnt) {
+    /*close all autocomplete lists in the document,
+    except the one passed as an argument:*/
+    var x = document.getElementsByClassName("autocomplete-items");
+    for (var i = 0; i < x.length; i++) {
+      if (elmnt != x[i] && elmnt != inp) {
+      x[i].parentNode.removeChild(x[i]);
+    }
+  }
+}
+/*execute a function when someone clicks in the document:*/
+document.addEventListener("click", function (e) {
+    closeAllLists(e.target);
+});
+} 
+
+autocomplete(document.getElementById("party_field"));
+
 // Initial Synchronization
 const nn = localStorage.getItem("username");
 if (nn) {
     username = nn;
     document.getElementById("username_change").innerText = username;
 }
+
+const pp = localStorage.getItem("party");
+if (pp) {
+    party = pp;
+    document.getElementById("party").innerText = party;
+}
 renderCanvas();
+updatePartyList();
 updatePalette().then(() => {
     updatePaletteElement();
     updateSelectedColor();
 });
-updatePlaceholderTransform();
 updateSelectorTransform([0, 0]);
 updateField().then(() => {
+    const min_size = Math.floor(Math.min(cnv_cnt.offsetWidth / field.width, cnv_cnt.offsetHeight / field.height));
+    field.scale = min_size;
     field.offset[0] = cnv_cnt.offsetWidth / 2 - field.width*field.scale / 2;
     field.offset[1] = cnv_cnt.offsetHeight / 2 - field.height*field.scale / 2;
     updateCanvasTransform();
     renderCanvas();
+    updatePlaceholderTransform();
 });
 
 changeScreens();
@@ -400,6 +571,7 @@ setInterval(() => updateFieldDelta().then(() => {
     cursor_pos[0] = Math.min(field.width, cursor_pos[0]);
     cursor_pos[1] = Math.min(field.height, cursor_pos[1]);
     updatePlaceholderTransform();
+    updatePartyList();
 }), 1000);
 
 // Update palette every 10 seconds
