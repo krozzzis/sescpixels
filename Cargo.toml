@@ -9,6 +9,6 @@ log = "0.4"
 clap = {version = "4", features = ["derive"]}
 actix-web = "4"
 actix-files = "0.6"
-rusqlite = "0.28"
+rusqlite = {version = "0.28", features = ["bundled"]}
 serde = {version = "1", features = ["derive"]}
 regex = "1"
