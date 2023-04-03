@@ -172,15 +172,31 @@ impl Db {
 
     fn get_palette(&self) -> Result<Palette, ()> {
         let mut pal = HashMap::new();
-        pal.insert(0, Color(230, 230, 230));
-        pal.insert(1, Color(255, 51, 51));
-        pal.insert(2, Color(51, 255, 51));
-        pal.insert(3, Color(51, 51, 255));
-        pal.insert(4, Color(255, 51, 255));
-        pal.insert(5, Color(51, 255, 255));
-        pal.insert(6, Color(255, 255, 51));
-        pal.insert(7, Color(20, 20, 20));
-        Ok(Palette { count: pal.len(), colors: pal, order: vec![0, 7, 1, 2, 3, 4, 5, 6] })
+        pal.insert(0, Color(250, 250, 250));// white
+        pal.insert(1, Color(255, 51, 51));  // red
+        pal.insert(2, Color(51, 255, 51));  // green
+        pal.insert(3, Color(51, 51, 255));  // blue
+        pal.insert(4, Color(255, 51, 255)); // magenta
+        pal.insert(5, Color(51, 255, 255)); // cyan
+        pal.insert(6, Color(255, 255, 51)); // yellow
+        pal.insert(7, Color(10, 10, 10));   // black
+        pal.insert(8, Color(70, 70, 70));   // gray
+        pal.insert(9, Color(130, 130, 130));   // light-gray
+        pal.insert(10, Color(60, 180, 75));   // dark-green
+        pal.insert(11, Color(170, 255, 195));   // mint
+        pal.insert(12, Color(128, 0, 0));   // maroon
+        pal.insert(13, Color(250, 190, 212));   // pink
+        pal.insert(14, Color(0, 0, 128));   // navy
+        pal.insert(15, Color(100, 130, 200));   // lightblue
+        pal.insert(16, Color(145, 30, 180));   // purple
+        pal.insert(17, Color(220, 190, 255));   // lavender
+        pal.insert(18, Color(128, 128, 0));   // olive
+        pal.insert(19, Color(255, 200, 200));   // beige
+        pal.insert(20, Color(245, 130, 48));   // orange
+        pal.insert(21, Color(150, 90, 20));   // brown
+        pal.insert(22, Color(255, 215, 180));   // apricot
+        pal.insert(23, Color(0, 128, 128));   // teal
+        Ok(Palette { count: pal.len(), colors: pal, order: vec![0, 9, 8, 7, 13, 1, 12, 11, 2, 10, 15, 3, 14, 17, 4, 16, 5, 23, 19, 6, 18, 21, 20, 22] })
     }
 
     fn get_users_rank(&self, count: usize) -> rusqlite::Result<HashMap<String, usize>> {

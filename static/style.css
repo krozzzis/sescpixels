@@ -162,21 +162,25 @@ html, body {
 }
 
 #place_pixel {
-    position: absolute;
     width: 100px;
     height: 42px;
-    left: calc(50% - 50px);
-    bottom: 128px;
+}
+
+.bottom_cnt {
+    position: absolute;
+    width: 100%;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 #palette {
-    position: absolute;
     background-color: #fff;
     border: 2px solid #5e5e5e;
     border-radius: 12px;
     padding: 12px;
-    left: 0px;
-    bottom: 0px;
     margin: 12px;
     display: flex;
     align-items: center;

@@ -463,7 +463,7 @@ document.getElementById("cancel_party_update").onclick = () => {
 };
 
 document.getElementById("plus_scale").onclick = () => {
-    const delta = 1;
+    const delta = 2;
     const ns = Math.min(field.max_scale, Math.max(field.min_scale, Math.floor(field.scale+delta)));
     if (ns != field.scale) {
         const mx = cnv_cnt.offsetWidth/2 - field.offset[0];
@@ -482,7 +482,7 @@ document.getElementById("plus_scale").onclick = () => {
 };
 
 document.getElementById("minus_scale").onclick = () => {
-    const delta = -1;
+    const delta = -2;
     const ns = Math.min(field.max_scale, Math.max(field.min_scale, Math.floor(field.scale+delta)));
     if (ns != field.scale) {
         const mx = cnv_cnt.offsetWidth/2 - field.offset[0];
