@@ -191,7 +191,7 @@ impl Db {
         pal.insert(16, Color(145, 30, 180));   // purple
         pal.insert(17, Color(220, 190, 255));   // lavender
         pal.insert(18, Color(128, 128, 0));   // olive
-        pal.insert(19, Color(255, 200, 200));   // beige
+        pal.insert(19, Color(255, 250, 200));   // beige
         pal.insert(20, Color(245, 130, 48));   // orange
         pal.insert(21, Color(150, 90, 20));   // brown
         pal.insert(22, Color(255, 215, 180));   // apricot
@@ -387,6 +387,10 @@ async fn view_page() -> impl Responder {
     NamedFile::open_async("./static/view.html").await
 }
 
+async fn tutorial_page() -> impl Responder {
+    NamedFile::open_async("./static/tutorial.html").await
+}
+
 #[derive(Parser, Debug)]
 struct CliArgs {
     #[arg(long, default_value="./db.db")]
@@ -449,6 +453,7 @@ async fn main() -> std::io::Result<()>{
                 web::scope("")
                     .route("/play", web::get().to(play_page))
                     .route("/view", web::get().to(view_page))
+                    .route("/", web::get().to(tutorial_page))
             )
     })
     .bind((args.addr, args.port))?

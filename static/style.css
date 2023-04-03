@@ -5,6 +5,14 @@ html, body {
     font-family: sans-serif;
 }
 
+.tutorial {
+    font-family: sans-serif;
+    font-size: 1.25em;
+    margin: auto;
+    margin-top: 50px;
+    width: min(90%, 500px);
+}
+
 .headerbar {
     background-color: #222;
     vertical-align: middle;
@@ -112,7 +120,7 @@ html, body {
     overflow: hidden;
     width: 100%;
     touch-action: none;
-    /* background-color: #f0f0f0; */
+    background-color: #fff;
 }
 
 .canvas_play {

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <title>SESCPixels tutorial</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="static/style.css" rel="stylesheet">
+  </head>
+  <body>
+    <header class="headerbar">
+      <a class="headerbar_title" href="/play">SESCPixels</a>
+      <span class="headerbar_title" id="stat">|</span>
+      <a class="headerbar_title" href="/play">Play</a>
+    </header>
+    <article class="tutorial">
+      <p> В этой игре вы можете изменять поле, ставя пиксели одного из 24 цветов.</p>
+      <p>
+      На <a href="/view">главном экране</a> отображается топ-5 пользователей и партий по количеству пикселей, принадлежащих им на холсте.
+      Когда игрок перекрашивает пиксель другого игрока, этот пиксель начинается числиться в топе у нового владельца.
+      Также партия, в которой он состоял на момент перекрашивания, тоже получает балл.
+      После смены партии игроком, все закрашенные им пиксели остаются числиться за той партией, в которой состоял игрок на момент перекрашивания пикселя.
+      </p>
+      <p>
+      На <a href="/play">экране игры</a> в шапке сверху можно сменить имя пользователя и партию.
+      По умолчанию стоят значения <i>User</i> и <i>NoParty</i> соответственно.
+      Пиксели, принадлежащие игрокам с этими именем и партией, в топе не учитываются.
+      </p>
+    </article>
+  </body>
+</html>
