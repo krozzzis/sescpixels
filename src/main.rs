@@ -48,6 +48,7 @@ struct PutPixelEvent {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 struct OutputPixelEvent {
+    id: usize,
     x: usize,
     y: usize,
     width: usize,
@@ -280,11 +281,12 @@ impl Db {
     }
 
     fn get_events(&self, from: usize) -> rusqlite::Result<Vec<OutputPixelEvent>> {
-        let mut stmt = self.conn.prepare("SELECT x, y, color FROM events WHERE id > ? ORDER BY id ASC")?;
+        let mut stmt = self.conn.prepare("SELECT id, x, y, color FROM events WHERE id > ? ORDER BY id ASC")?;
         let result = stmt.query_map([from], |row| Ok(OutputPixelEvent {
-            x: row.get(0)?,
-            y: row.get(1)?,
-            color: row.get(2)?,
+            id: row.get(0)?,
+            x: row.get(1)?,
+            y: row.get(2)?,
+            color: row.get(3)?,
             width: self.canvas_width,
             height: self.canvas_height,
         }))?.map(|x| x.unwrap()).collect();
@@ -431,8 +433,8 @@ async fn main() -> std::io::Result<()>{
         db: Mutex::new(db),
     });
     let governor_conf = GovernorConfigBuilder::default()
-        .per_second(100)
-        .burst_size(200)
+        .per_millisecond(1)
+        .burst_size(500)
         .finish()
         .unwrap();
     println!("Starting server");

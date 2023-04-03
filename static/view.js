@@ -89,14 +89,15 @@ const updateFieldDelta = async () => {
             // console.log(json);
             for (let i = 0; i < json.length; i++) {
                 const ev = json[i];
-                if (ev.width != field.width || ev.height != field.height) {
+                if (ev.id < field.history_height || ev.width != field.width || ev.height != field.height) {
                     updateField();
                 } else {
-                    field.pixels[ev.x + ev.y*field.width] = ev.color;
+                    if (ev.x < ev.width && ev.y < ev.height)
+                        field.pixels[ev.x + ev.y*field.width] = ev.color;
+                    field.history_height = Math.max(field.history_height, ev.id);
                 }
             }
         }
-        updateHistoryHeight();
     } else {
         console.log("can't update field by delta");
     }
