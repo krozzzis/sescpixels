@@ -120,7 +120,7 @@ html, body {
     overflow: hidden;
     width: 100%;
     touch-action: none;
-    background-color: #fff;
+    background-color: #eee;
 }
 
 .canvas_play {

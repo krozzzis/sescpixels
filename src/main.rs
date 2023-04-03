@@ -6,10 +6,10 @@ use actix_files::{NamedFile, Files};
 
 use clap::Parser;
 use log::debug;
-use regex::Regex;
 
 use rusqlite::Connection;
 use serde::{Serialize, Deserialize};
+use actix_governor::{Governor, GovernorConfigBuilder};
 
 type ColorIndex = u8;
 
@@ -430,6 +430,11 @@ async fn main() -> std::io::Result<()>{
     let state = web::Data::new(ServerState {
         db: Mutex::new(db),
     });
+    let governor_conf = GovernorConfigBuilder::default()
+        .per_second(100)
+        .burst_size(200)
+        .finish()
+        .unwrap();
     println!("Starting server");
     HttpServer::new(move || {
         App::new()
@@ -437,6 +442,7 @@ async fn main() -> std::io::Result<()>{
             .service(
                 Files::new("/static", "./static")
             )
+            .wrap(Governor::new(&governor_conf))
             .service(get_events)
             .service(get_users_rank)
             .service(get_party_rank)
