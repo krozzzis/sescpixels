@@ -242,6 +242,22 @@ if (cnv_cnt != null) {
             evStack.push(e);
         }
     }, false);
+    cnv_cnt.onpointercancel = (e) => {
+        if (screen == 0) {
+            removeEvent(e);
+            if (evStack.length < 2) {
+                prev = -1;
+            }
+        }
+    }
+    cnv_cnt.onpointerleave = (e) => {
+        if (screen == 0) {
+            removeEvent(e);
+            if (evStack.length < 2) {
+                prev = -1;
+            }
+        }
+    }
     cnv_cnt.onpointerup = (e) => {
         if (screen == 0) {
             const time = new Date() - dragging_started;
