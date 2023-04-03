@@ -1,8 +1,8 @@
 html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: sans-serif;
 }
 
 .headerbar {
@@ -12,12 +12,49 @@ html, body {
     display: grid;
     grid-template-columns: min-content min-content auto max-content;
     grid-gap: 8px;
+    overflow: auto;
+    white-space: nowrap;
+    max-height: 43px;
 }
 
 .headerbar_title {
     color: #fff;
     font-weight: bold;
     text-decoration: none;
+    white-space: nowrap;
+}
+
+#coord {
+    position: absolute;
+    font-weight: bold;
+    top: 50px;
+    left: 12px;
+}
+
+.scale_control {
+    position: absolute;
+    display: flex;
+    gap: 12px;
+    flex-direction: column;
+    top: 50px;
+    right: 12px;
+}
+
+.scale_btn {
+    background-size: 48px;
+    color: transparent;
+    border: none;
+    padding: 0px;
+    height: 48px;
+    width: 48px;
+}
+
+#plus_scale {
+    background-image: url("plus.svg");
+}
+
+#minus_scale {
+    background-image: url("minus.svg");
 }
 
 .party_container {
@@ -54,11 +91,9 @@ html, body {
     /* overflow: hidden; */
 }
 
-#app_play {
+.app_play {
     width: 100%;
-    height: calc(100% - 48px);
-    position: relative;
-    display: grid;
+    height: 100%;
     overflow: hidden;
 }
 
@@ -77,14 +112,14 @@ html, body {
     overflow: hidden;
     width: 100%;
     touch-action: none;
-    background-color: #f0f0f0;
+    /* background-color: #f0f0f0; */
 }
 
 .canvas_play {
     position: relative;
     overflow: hidden;
     width: 100%;
-    height: calc(100% - 48px);
+    height: calc(100vh - 43px);
 }
 
 .header_view {
@@ -156,7 +191,6 @@ html, body {
     height: 32px;
     border: 2px solid #5e5e5e;
     border-radius: 16px;
-    /* flex: 32px; */
 }
 
 .selected_color {
@@ -172,11 +206,17 @@ html, body {
     transform: translate(-50%, -50%);
     padding: 32px;
     background-color: #fff;
+    border: 2px solid #ccc;
     border-radius: 12px;
     display: grid;
     grid-gap: 8px;
-    grid-template-rows: min-content min-content;
+    grid-template-rows: min-content min-content min-content;
     grid-template-columns: 50% 50%;
+}
+
+.modal_title {
+    grid-column: 1 3;
+    font-weight: bold;
 }
 
 .modal_btn {

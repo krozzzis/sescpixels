@@ -39,7 +39,7 @@ let party_list = [];
 
 // Zoom gestures
 let evStack = [];
-let zoomDiff = -1;
+let prev = -1;
 let zoomSpeed = 0.001;
 
 // Canvas and cursor movement
@@ -244,11 +244,6 @@ if (cnv_cnt != null) {
     }, false);
     cnv_cnt.onpointerup = (e) => {
         if (screen == 0) {
-            removeEvent(e);
-            if (evStack.length < 2) {
-                zoomDiff = -1;
-            }
-            dragging = false;
             const time = new Date() - dragging_started;
             if (time < field.click_duration) {
                 const x = Math.floor(Math.floor((e.clientX - field.offset[0] - cnv_cnt.offsetLeft) / field.scale));
@@ -256,9 +251,20 @@ if (cnv_cnt != null) {
                 if (x >= 0 && x < field.width && y >= 0 && y < field.height)
                     if (e.pointerType == "mouse" && e.button == 0 || e.pointerType == "touch") {
                         cursor_pos = [x, y];
+                        document.getElementById("coord").innerText = `Coords: ${cursor_pos[0]+1} : ${cursor_pos[1]+1}`;
                         updatePlaceholderTransform();
                     }
             }
+            removeEvent(e);
+            if (evStack.length < 2) {
+                prev = -1;
+            }
+
+            if (evStack.length == 1) {
+                drag_offset[0] = evStack[0].clientX;
+                drag_offset[1] = evStack[0].clientY;
+            }
+            dragging = false;
         }
     }
     cnv_cnt.onpointermove = (e) => {
@@ -283,15 +289,23 @@ if (cnv_cnt != null) {
             // Zoom gesture
             if (evStack.length == 2) {
                 const distance = Math.sqrt(Math.pow(evStack[0].clientX-evStack[1].clientX, 2) + Math.pow(evStack[0].clientY-evStack[1].clientY, 2));   
-                if (zoomDiff > 0) {
-                    let delta = Math.pow(1, (distance - zoomDiff) / 300);
-                    if (distance < zoomDiff)
-                        delta = -delta;
+                if (prev > 0 && prev - distance != 0) {
+                    const dp = distance - prev;
+                    let delta = dp / 2;
+                    // if (dp < 0) {
+                    //     delta = -delta;
+                    // }
+                    // document.getElementById("stat").innerText = delta;
+                    let ns = field.scale;
+                    if (Math.abs(delta) > 1) {
+                        ns = Math.min(field.max_scale, Math.max(field.min_scale, Math.floor(field.scale+delta)));
+                    }
 
-                    if (Math.min(field.max_scale, Math.max(field.min_scale, field.scale+delta)) != field.scale) {
-                        const mx = e.clientX - field.offset[0];
-                        const my = e.clientY - field.offset[1] - cnv_cnt.offsetTop 
-                        const ns = Math.min(field.max_scale, Math.max(field.min_scale, field.scale+delta));
+                    if (ns != field.scale) {
+                        // const mx = e.clientX - field.offset[0];
+                        // const my = e.clientY - field.offset[1] - cnv_cnt.offsetTop 
+                        const mx = cnv_cnt.offsetWidth/2 - field.offset[0];
+                        const my = cnv_cnt.offsetHeight/2 - field.offset[1] - cnv_cnt.offsetTop 
                         const nsx = field.width*ns;
                         const nsy = field.height*ns;
                         const sx = field.width*field.scale;
@@ -299,23 +313,20 @@ if (cnv_cnt != null) {
                         field.offset[0] -= (nsx - sx) * mx/sx;
                         field.offset[1] -= (nsy - sy) * my/sy;
 
-                        field.scale += delta;
-                        field.scale = Math.min(field.max_scale, Math.max(field.min_scale, field.scale));
+                        field.scale = ns;
                         updateCanvasTransform();
                         updatePlaceholderTransform();
                         updateSelectorTransform([e.clientX, e.clientY]);
                     }
                 }
-                zoomDiff = distance;
-            } else {
-                if (dragging) {
-                    field.offset[0] += evStack[0].clientX - drag_offset[0];
-                    field.offset[1] += evStack[0].clientY - drag_offset[1];
-                    drag_offset[0] = evStack[0].clientX;
-                    drag_offset[1] = evStack[0].clientY;
-                    updateCanvasTransform();
-                    updatePlaceholderTransform();
-                }
+                prev = distance;
+            } else if (evStack.length == 1) {
+                field.offset[0] += evStack[0].clientX - drag_offset[0];
+                field.offset[1] += evStack[0].clientY - drag_offset[1];
+                drag_offset[0] = evStack[0].clientX;
+                drag_offset[1] = evStack[0].clientY;
+                updateCanvasTransform();
+                updatePlaceholderTransform();
             }
         }
     };
@@ -325,19 +336,21 @@ if (cnv_cnt != null) {
             let delta = Math.floor(Math.pow(2, Math.abs(e.wheelDelta*speed)));
             if (e.wheelDelta < 0)
                 delta = -delta;
-            const mx = e.clientX - field.offset[0];
-            const my = e.clientY - field.offset[1] - cnv_cnt.offsetTop 
-            const nsx = field.width*(field.scale + delta);
-            const nsy = field.height*(field.scale + delta);
-            const sx = field.width*field.scale;
-            const sy = field.height*field.scale;
-            field.offset[0] -= (nsx - sx) * mx/sx;
-            field.offset[1] -= (nsy - sy) * my/sy;
-            field.scale += delta;
-            field.scale = Math.min(field.max_scale, Math.max(field.min_scale, field.scale));
-            updateCanvasTransform();
-            updatePlaceholderTransform();
-            updateSelectorTransform([e.clientX, e.clientY]);
+            const ns = Math.min(field.max_scale, Math.max(field.min_scale, field.scale+delta));
+            if (ns != field.scale) {
+                const mx = e.clientX - field.offset[0];
+                const my = e.clientY - field.offset[1] - cnv_cnt.offsetTop 
+                const nsx = field.width*(field.scale + delta);
+                const nsy = field.height*(field.scale + delta);
+                const sx = field.width*field.scale;
+                const sy = field.height*field.scale;
+                field.offset[0] -= (nsx - sx) * mx/sx;
+                field.offset[1] -= (nsy - sy) * my/sy;
+                field.scale = ns;
+                updateCanvasTransform();
+                updatePlaceholderTransform();
+                updateSelectorTransform([e.clientX, e.clientY]);
+            } 
         }
     }
 }
@@ -381,7 +394,10 @@ document.getElementById("place_pixel").onclick = () => {
 document.getElementById("username_change").onclick = () => {
     if (screen == 0) {
         screen = 1;
-        document.getElementById("username_field").value = username;
+        if (username == "User")
+            document.getElementById("username_field").value = "";
+        else
+            document.getElementById("username_field").value = username;
         changeScreens();
     }
 };
@@ -444,6 +460,44 @@ document.getElementById("cancel_username_update").onclick = () => {
 document.getElementById("cancel_party_update").onclick = () => {
     screen = 0;
     changeScreens();
+};
+
+document.getElementById("plus_scale").onclick = () => {
+    const delta = 1;
+    const ns = Math.min(field.max_scale, Math.max(field.min_scale, Math.floor(field.scale+delta)));
+    if (ns != field.scale) {
+        const mx = cnv_cnt.offsetWidth/2 - field.offset[0];
+        const my = cnv_cnt.offsetHeight/2 - field.offset[1] - cnv_cnt.offsetTop 
+        const nsx = field.width*ns;
+        const nsy = field.height*ns;
+        const sx = field.width*field.scale;
+        const sy = field.height*field.scale;
+        field.offset[0] -= (nsx - sx) * mx/sx;
+        field.offset[1] -= (nsy - sy) * my/sy;
+
+        field.scale = ns;
+        updateCanvasTransform();
+        updatePlaceholderTransform();
+    }
+};
+
+document.getElementById("minus_scale").onclick = () => {
+    const delta = -1;
+    const ns = Math.min(field.max_scale, Math.max(field.min_scale, Math.floor(field.scale+delta)));
+    if (ns != field.scale) {
+        const mx = cnv_cnt.offsetWidth/2 - field.offset[0];
+        const my = cnv_cnt.offsetHeight/2 - field.offset[1] - cnv_cnt.offsetTop 
+        const nsx = field.width*ns;
+        const nsy = field.height*ns;
+        const sx = field.width*field.scale;
+        const sy = field.height*field.scale;
+        field.offset[0] -= (nsx - sx) * mx/sx;
+        field.offset[1] -= (nsy - sy) * my/sy;
+
+        field.scale = ns;
+        updateCanvasTransform();
+        updatePlaceholderTransform();
+    }
 };
 
 function autocomplete(inp) {

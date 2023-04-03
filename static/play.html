@@ -12,25 +12,34 @@
       <span class="headerbar_title" id="stat">|</span>
       <!-- <a class="headerbar_button" href="/play">Play</a> -->
       <!-- <a class="headerbar_button" href="/view">View</a> -->
-      <span class="headerbar_title party_container">Party: <a id="party" href="#">NoParty</a></span>
-      <span class="headerbar_title username_container">Username: <a id="username_change" href="#" class="username">User</a></span>
+      <span class="headerbar_title party_container">Партия: <a id="party" href="#">NoParty</a></span>
+      <span class="headerbar_title username_container">Пользователь: <a id="username_change" href="#" class="username">User</a></span>
     </header>
-      <div id="canvas_container" class="canvas_play">
-        <div id="canvas_scroll">
-          <canvas id="canvas"></canvas>
-        </div>
-        <div id="selector"></div>
-        <div id="placeholder"></div>
+    <div id="canvas_container" class="canvas_play">
+      <div id="canvas_scroll">
+        <canvas id="canvas"></canvas>
       </div>
-    <div id="palette">
+      <div id="selector"></div>
+      <div id="placeholder"></div>
     </div>
+
+    <span id="coord">Coords: 1 : 1</span>
+
+    <div class="scale_control">
+      <a class="scale_btn" id="plus_scale" href="#"></a>
+      <a class="scale_btn" id="minus_scale" href="#"></a>
+    </div>
+
+    <div id="palette"></div>
     <button id="place_pixel">PLACE</button>
     <div id="username_change_screen" class="modal">
+      <span class="modal_title">Имя пользователя</span>
       <input id="username_field" placeholder="User">
       <button id="username_update" class="modal_btn">Change username</button>
       <button id="cancel_username_update" class="modal_btn">Cancel</button>
     </div>
     <div id="party_change_screen" class="modal">
+      <span class="modal_title">Партия</span>
       <div class="party_field_cont">
         <input id="party_field" placeholder="NoParty">
       </div>

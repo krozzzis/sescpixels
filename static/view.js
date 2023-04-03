@@ -124,11 +124,11 @@ const updateUsersRankEl = () => {
     row.classList.add("table_title");
 
     let a = document.createElement("th");
-    a.innerText = "User";
+    a.innerText = "Пользователь";
     row.appendChild(a);
 
     let b = document.createElement("th");
-    b.innerText = "Score";
+    b.innerText = "Счет";
     row.appendChild(b);
 
     rank_el.appendChild(row);
@@ -171,11 +171,11 @@ const updatePartyRankEl = () => {
     row.classList.add("table_title");
 
     let a = document.createElement("th");
-    a.innerText = "Party";
+    a.innerText = "Партия";
     row.appendChild(a);
 
     let b = document.createElement("th");
-    b.innerText = "Score";
+    b.innerText = "Счет";
     row.appendChild(b);
 
     rank_el.appendChild(row);
