@@ -395,6 +395,9 @@ struct CliArgs {
     #[arg(short, long, default_value="8080")]
     port: u16,
 
+    #[arg(short, long, default_value="127.0.0.1")]
+    addr: String,
+
     #[arg(long, default_value="100")]
     width: usize,
 
@@ -448,7 +451,7 @@ async fn main() -> std::io::Result<()>{
                     .route("/view", web::get().to(view_page))
             )
     })
-    .bind(("0.0.0.0", args.port))?
+    .bind((args.addr, args.port))?
     .run()
     .await
 }
