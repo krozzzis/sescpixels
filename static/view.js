@@ -63,7 +63,7 @@ const updateHistoryHeight = async () => {
 }
 
 const updateUsersRank = async () => {
-    const resp = await fetch("/api/get_users_rank/10");
+    const resp = await fetch("/api/get_users_rank/7");
     if (resp.status == 200) {
         const json = await resp.json();
         if (json != null) {
@@ -72,7 +72,7 @@ const updateUsersRank = async () => {
     }
 }
 const updatePartyRank = async () => {
-    const resp = await fetch("/api/get_party_rank/10");
+    const resp = await fetch("/api/get_party_rank/7");
     if (resp.status == 200) {
         const json = await resp.json();
         if (json != null) {
