@@ -49,17 +49,25 @@ let cursor_pos = [0, 0];
 let drag_offset = [0, 0];
 let dragging_started = "";
 
+let pix_owner = "";
+let pix_party = "";
+
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d", { alpha: false });
 const cnv_scr = document.getElementById("canvas_scroll");
 const selector = document.getElementById("selector");
 const placeholder = document.getElementById("placeholder");
 
-const getUserId = async (un) => {
-    const resp = await fetch(`/api/get_id/${un}`);
-    if (resp.status == 200) {
-        console.log(resp)
-    }
+const error = async (text) => {
+    const cont = document.createElement("div");
+    cont.classList = ["error_el"];
+
+    const label = document.createElement("span");
+    label.innerText = text;
+    cont.appendChild(label);
+    const list = document.getElementById("error_list");
+    list.appendChild(cont);
+    setTimeout(() => updatePalette().then(() => list.removeChild(cont)), 1000);
 }
 
 const updateField = async () => {
@@ -70,7 +78,11 @@ const updateField = async () => {
             field.pixels = json.pixels;
             field.width = json.width;
             field.height = json.height;
+        } else {
+            error("Can't update field");
         }
+    } else {
+        error("Can't update field");
     }
     updateHistoryHeight();
 }
@@ -92,6 +104,32 @@ const updatePartyList = async () => {
                 party_list = json;
                 party_list.sort();
             })
+        } else {
+            error(resp.body)
+        }
+    });
+}
+
+const getPixelOwner = async (x, y) => {
+    fetch(`/api/get_pixel_owner/${x}/${y}`).then((resp) => {
+        if (resp.status == 200) {
+            resp.json().then((json) => {
+                pix_owner = json;
+            })
+        } else {
+            pix_owner = "User";
+        }
+    });
+}
+
+const getPixelParty = async (x, y) => {
+    fetch(`/api/get_pixel_party/${x}/${y}`).then((resp) => {
+        if (resp.status == 200) {
+            resp.json().then((json) => {
+                pix_party = json;
+            })
+        } else {
+            pix_party = "NoParty";
         }
     });
 }
@@ -114,7 +152,7 @@ const updateFieldDelta = async () => {
             }
         }
     } else {
-        console.log("can't update field by delta");
+        error("Can't update field");
     }
 }
 
@@ -157,7 +195,7 @@ const updatePaletteElement = () => {
         };
     }
 }
-
+;
 const putPixel = async (pos, color) => {
     const resp = await fetch("/api/put_pixel", {
         method: "PUT",
@@ -173,7 +211,7 @@ const putPixel = async (pos, color) => {
         })
     });
     if (resp.status != 200) {
-        console.log("Error put pixel");
+        error(`Error put pixel`);
     }
 };
 
@@ -268,6 +306,7 @@ if (cnv_cnt != null) {
                     if (e.pointerType == "mouse" && e.button == 0 || e.pointerType == "touch") {
                         cursor_pos = [x, y];
                         document.getElementById("coord").innerText = `Coords: ${cursor_pos[0]+1} : ${cursor_pos[1]+1}`;
+                        // getPixelOwner(x, y).then(() => getPixelParty(x, y).then(() => document.getElementById("coord").innerText = `Coords: ${cursor_pos[0]+1} : ${cursor_pos[1]+1} - ${pix_owner} | ${pix_party}`));
                         updatePlaceholderTransform();
                     }
             }
@@ -437,14 +476,14 @@ document.getElementById("username_update").onclick = () => {
         localStorage.setItem("username", "User");
         document.getElementById("username_change").innerText = "User";
         changeScreens();
-    } else if (name.match("[a-zA-Zа-яА-Я0-9\s]{4,16}") && name.length <= 16) {
+    } else if (name.match("[a-zA-Zа-яА-Я0-9._\s]{3,24}") && name.length <= 24) {
         screen = 0;
         username = name;
         localStorage.setItem("username", name);
         document.getElementById("username_change").innerText = name;
         changeScreens();
     } else {
-        alert("Имя пользователя может содержать только буквы, цифры и пробелы. Длина - 4-16 символов.");
+        alert("Имя пользователя может содержать только буквы, цифры, точки, подчеркивания и пробелы. Длина - 3-24 символов.");
     }
 };
 
@@ -457,14 +496,14 @@ document.getElementById("party_update").onclick = () => {
         document.getElementById("party").innerText = "NoParty";
         changeScreens();
     }
-    else if (name.match("[a-zA-Zа-яА-Я0-9\s]{4,16}") && name.length <= 16) {
+    else if (name.match("[a-zA-Zа-яА-Я0-9._\s]{3,24}") && name.length <= 24) {
         screen = 0;
         party = name;
         localStorage.setItem("party", name);
         document.getElementById("party").innerText = name;
         changeScreens();
     } else {
-        alert("Название партии может содержать только буквы, цифры и пробелы. Длина - 4-16 символов.");
+        alert("Название партии может содержать только буквы, цифры, точки, подчеркивания и пробелы. Длина - 3-24 символов.");
     }
 };
 

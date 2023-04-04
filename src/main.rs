@@ -123,10 +123,10 @@ impl Db {
         self.conn.execute("BEGIN", [])?;
         for y in 0..height {
             for x in 0..width{
-                self.conn.execute("INSERT INTO pixels (x, y, color) SELECT ?1, ?2, ?3 WHERE NOT EXISTS (SELECT (x, y) FROM pixels WHERE x=?1 AND y=?2);", [x, y, 0])?;
+                self.conn.execute("INSERT INTO pixels (x, y, color, owner, party) SELECT ?1, ?2, ?3, ?4, ?5 WHERE NOT EXISTS (SELECT (x, y) FROM pixels WHERE x=?1 AND y=?2);", [x, y, 0, 0, 0])?;
             }
         }
-        self.conn.execute("INSERT INTO events (x, y, color, owner) VALUES (10000, 10000, 0, 0)", [])?;
+        self.conn.execute("INSERT INTO events (x, y, color, owner, party) VALUES (10000, 10000, 0, 0, 0)", [])?;
         self.conn.execute("END", [])?;
         Ok(())
     }
@@ -268,6 +268,28 @@ impl Db {
         Ok(color)
     }
 
+    fn get_pixel_owner(&mut self, x: usize, y: usize) -> rusqlite::Result<String> {
+        let mut stmt = self.conn.prepare("SELECT owner FROM pixels WHERE x=?1 AND y=?2 AND NOT owner IS NULL AND owner != 0")?;
+        let mut c = stmt.query([x, y])?;
+        let owner = if let Some(row) = c.next()? {
+            row.get(0)?
+        } else {
+            String::from("User")
+        };
+        Ok(owner)
+    }
+
+    fn get_pixel_party(&mut self, x: usize, y: usize) -> rusqlite::Result<String> {
+        let mut stmt = self.conn.prepare("SELECT party FROM pixels WHERE x=?1 AND y=?2 AND NOT party IS NULL AND party != 0")?;
+        let mut c = stmt.query([x, y])?;
+        let owner = if let Some(row) = c.next()? {
+            row.get(0)?
+        } else {
+            String::from("NoParty")
+        };
+        Ok(owner)
+    }
+
     fn update_history_height(&mut self) -> rusqlite::Result<()> {
         let mut stmt = self.conn.prepare("SELECT MAX(id) FROM events")?;
         let mut h = stmt.query([])?;
@@ -345,7 +367,7 @@ async fn get_users_rank(query: web::Path<usize>, state: web::Data<ServerState>) 
 async fn get_party_rank(query: web::Path<usize>, state: web::Data<ServerState>) -> actix_web::Result<impl Responder> {
     let rank = match state.db.lock().unwrap().get_party_rank(query.into_inner()) {
         Ok(a) => a,
-        Err(e) => return Ok(HttpResponse::NotFound().body(e.to_string())),
+        Err(e) => return Ok(HttpResponse::NotFound().body("Can't get party rank")),
     };
     Ok(HttpResponse::Ok().json(rank))
 }
@@ -353,15 +375,34 @@ async fn get_party_rank(query: web::Path<usize>, state: web::Data<ServerState>) 
 async fn get_party_list(state: web::Data<ServerState>) -> actix_web::Result<impl Responder> {
     let list = match state.db.lock().unwrap().get_party_list() {
         Ok(a) => a,
-        Err(e) => return Ok(HttpResponse::NotFound().body(e.to_string())),
+        Err(e) => return Ok(HttpResponse::NotFound().body("Can't get party list")),
     };
     Ok(HttpResponse::Ok().json(list))
 }
 
+#[get("/api/get_pixel_owner/{x}/{y}")]
+async fn get_pixel_owner(query: web::Path<(usize, usize)>, state: web::Data<ServerState>) -> actix_web::Result<impl Responder> {
+    let (x, y) = query.into_inner();
+    let owner = match state.db.lock().unwrap().get_pixel_owner(x, y) {
+        Ok(a) => a,
+        Err(e) => return Ok(HttpResponse::NotFound().body(format!("Can't get pixel's owner {}", e.to_string()))),
+    };
+    Ok(HttpResponse::Ok().json(owner))
+}
+
+#[get("/api/get_pixel_party/{x}/{y}")]
+async fn get_pixel_party(query: web::Path<(usize, usize)>, state: web::Data<ServerState>) -> actix_web::Result<impl Responder> {
+    let (x, y) = query.into_inner();
+    let owner = match state.db.lock().unwrap().get_pixel_party(x, y) {
+        Ok(a) => a,
+        Err(e) => return Ok(HttpResponse::NotFound().body(format!("Can't get pixel's party {}", e.to_string()))),
+    };
+    Ok(HttpResponse::Ok().json(owner))
+}
+
 fn match_name(name: &str) -> bool {
     for ch in name.to_lowercase().chars() {
-        if !(ch.is_alphanumeric() || ch.is_whitespace()) {
-            println!("mathc {name}");
+        if !(ch.is_alphanumeric() || ch.is_whitespace() || ch == '.' || ch == '_') {
             return false;
         }
     }
@@ -371,11 +412,11 @@ fn match_name(name: &str) -> bool {
 async fn put_pixel(query: web::Json<PutPixelEvent>, state: web::Data<ServerState>) -> actix_web::Result<impl Responder> {
     debug!("/api/put_pixel request");
     let event = query.into_inner();
-    if !(match_name(&event.user) && match_name(&event.party) && event.user.chars().count() <= 16 && event.party.chars().count() <= 16) {
+    if !(match_name(&event.user) && match_name(&event.party) && event.user.chars().count() <= 24 && event.party.chars().count() <= 24) {
         return Ok(HttpResponse::BadRequest().body("Invalid username or party"));
     }
     if let Err(_) = state.db.lock().unwrap().put_pixel(event) {
-        Ok(HttpResponse::NotModified().finish())
+        Ok(HttpResponse::NotModified().body("Error occurse while putting pixel"))
     } else {
         Ok(HttpResponse::Ok().finish())
     }
@@ -433,7 +474,7 @@ async fn main() -> std::io::Result<()>{
         db: Mutex::new(db),
     });
     let governor_conf = GovernorConfigBuilder::default()
-        .per_millisecond(1)
+        .per_millisecond(5)
         .burst_size(500)
         .finish()
         .unwrap();
@@ -448,6 +489,8 @@ async fn main() -> std::io::Result<()>{
             .service(get_events)
             .service(get_users_rank)
             .service(get_party_rank)
+            .service(get_pixel_owner)
+            .service(get_pixel_party)
             .service(
                 web::scope("/api")
                     .route("/get_canvas", web::get().to(get_canvas))

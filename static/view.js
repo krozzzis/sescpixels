@@ -273,7 +273,7 @@ function removeEvent(ev) {
 
 window.onresize = updateCanvasTransform;
 
-document.getElementById("url").innerText = `${window.location.protocol}//${window.location.hostname}/play`;
+document.getElementById("url").innerText = `${window.location.hostname}/play`;
 document.getElementById("url").href = `${window.location.protocol}//${window.location.hostname}/play`;
 
 renderCanvas();
