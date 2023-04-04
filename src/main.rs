@@ -66,7 +66,7 @@ struct Db {
 }
 
 impl Db {
-    pub fn new(conn: Connection, width: usize, height: usize, cooldown: usize) -> rusqlite::Result<Self> {
+    pub fn new(conn: Connection, width: usize, height: usize, cooldown: usize, reinit: bool) -> rusqlite::Result<Self> {
         let mut sel = Self {
             conn,
             canvas_width: width,
@@ -76,7 +76,9 @@ impl Db {
             last_time: HashMap::new(),
         };
         sel.create_tables()?;
-        sel.create_canvas(width, height)?;
+        if reinit {
+            sel.create_canvas(width, height)?;
+        }
         sel.update_history_height()?;
         Ok(sel)
     }
@@ -453,6 +455,9 @@ struct CliArgs {
 
     #[arg(long, default_value="10")]
     cooldown: usize,
+
+    #[arg(long)]
+    reinit: bool,
 }
 
 #[actix_web::main]
@@ -463,7 +468,7 @@ async fn main() -> std::io::Result<()>{
     let path = args.db;
     // let exists = path.exists();
     let conn = Connection::open(&path).expect("Can't connect to database");
-    let db = match Db::new(conn, args.width, args.height, args.cooldown) {
+    let db = match Db::new(conn, args.width, args.height, args.cooldown, args.reinit) {
         Ok(db) => db,
         Err(e) => {
             println!("Can't initialize db: {e}");
