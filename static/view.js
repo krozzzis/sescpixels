@@ -1,9 +1,3 @@
-// TODO: better zoom handling on pc
-// TODO: zoom with touch gestures
-// TODO: better ui
-// TODO: hide placeholder after pixel placing
-// TODO: show error messages on the screen
-
 let field = {
     pixels: [0],
     width: 1,
@@ -14,6 +8,8 @@ let field = {
     click_duration: 300,
     offset: [0, 0],
     history_height: 1,
+    updated_pixels: [],
+    full_render: true,
 };
 
 let palette = {
@@ -40,15 +36,18 @@ const getUserId = async (un) => {
 }
 
 const updateField = async () => {
-    const resp = await fetch("/api/get_canvas");
-    if (resp.status == 200) {
-        const json = await resp.json();
-        if (json != null) {
-            field.pixels = json.pixels;
-            field.width = json.width;
-            field.height = json.height;
+    fetch("/api/get_canvas").then((resp) => {
+        if (resp.status == 200) {
+            resp.json().then((json) => {
+                if (json != null) {
+                    field.pixels = json.pixels;
+                    field.width = json.width;
+                    field.height = json.height;
+                }
+            })
         }
-    }
+    });
+    field.full_render = true;
     updateHistoryHeight();
 }
 
@@ -82,25 +81,28 @@ const updatePartyRank = async () => {
 }
 
 const updateFieldDelta = async () => {
-    const resp = await fetch(`/api/get_events/${field.history_height}`);
-    if (resp.status == 200) {
-        const json = await resp.json();
-        if (json != null) {
-            // console.log(json);
-            for (let i = 0; i < json.length; i++) {
-                const ev = json[i];
-                if (ev.id < field.history_height || ev.width != field.width || ev.height != field.height) {
-                    updateField();
-                } else {
-                    if (ev.x < ev.width && ev.y < ev.height)
-                        field.pixels[ev.x + ev.y*field.width] = ev.color;
-                    field.history_height = Math.max(field.history_height, ev.id);
+    fetch(`/api/get_events/${field.history_height}`).then((resp) => {
+        if (resp.status == 200) {
+            resp.json().then((json) => {
+                if (json != null) {
+                    field.full_render = false;
+                    for (let i = 0; i < json.length; i++) {
+                        const ev = json[i];
+                        if (ev.id < field.history_height || ev.width != field.width || ev.height != field.height) {
+                            updateField();
+                            field.full_render = true;
+                        } else {
+                            if (ev.x < ev.width && ev.y < ev.height) {
+                                field.pixels[ev.x + ev.y*field.width] = ev.color;
+                                field.updated_pixels.push([ev.x, ev.y]);
+                            }
+                            field.history_height = Math.max(field.history_height, ev.id);
+                        }
+                    }
                 }
-            }
+            })
         }
-    } else {
-        console.log("can't update field by delta");
-    }
+    })
 }
 
 const updatePalette = async () => {
@@ -234,20 +236,34 @@ const putPixel = async (pos, color) => {
 // Update canvas image by field.pixels buffer
 const renderCanvas = () => {
     if (canvas != null) {
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        canvas.width = field.width;
-        canvas.height = field.height;
-        for (let x = 0; x < field.width; x++) {
-            for (let y = 0; y < field.height; y++) {
-                const index = field.pixels[x + y*field.width];
+        if (field.full_render) {
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            canvas.width = field.width;
+            canvas.height = field.height;
+            for (let x = 0; x < field.width; x++) {
+                for (let y = 0; y < field.height; y++) {
+                    const index = field.pixels[x + y*field.width];
+                    let color = "#222";
+                    if (index < palette.count) {
+                        color = rgbToHex(palette.colors[index]);
+                    }
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x, y, 1, 1);
+                }
+            }
+        } else {
+            for (let j = 0; j < field.updated_pixels.length; j++) {
+                const i = field.updated_pixels[j];
+                const index = field.pixels[i[0] + i[1]*field.width];
                 let color = "#222";
                 if (index < palette.count) {
                     color = rgbToHex(palette.colors[index]);
                 }
                 ctx.fillStyle = color;
-                ctx.fillRect(x, y, 1, 1);
+                ctx.fillRect(i[0], i[1], 1, 1);
             }
+            field.updated_pixels = [];
         }
     }
 }
@@ -288,7 +304,7 @@ updateField().then(() => {
 updateUsersRank().then(() => updateUsersRankEl());
 updatePartyRank().then(() => updatePartyRankEl());
 
-// Synchronize canvas every 2 seconds
+// Synchronize canvas every 1 second
 setInterval(() => updateFieldDelta().then(() => {
     renderCanvas();
     updateCanvasTransform();
@@ -297,7 +313,7 @@ setInterval(() => updateFieldDelta().then(() => {
     // cursor_pos[0] = Math.min(field.width, cursor_pos[0]);
     // cursor_pos[1] = Math.min(field.height, cursor_pos[1]);
     // updatePlaceholderTransform();
-}), 2000);
+}), 1000);
 
 // Update palette every 20 seconds
 setInterval(() => updatePalette(), 20000);

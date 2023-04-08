@@ -1,8 +1,5 @@
-// TODO: better zoom handling on pc
-// TODO: zoom with touch gestures
 // TODO: better ui
 // TODO: hide placeholder after pixel placing
-// TODO: show error messages on the screen
 
 let field = {
     pixels: [0],
@@ -14,6 +11,8 @@ let field = {
     click_duration: 300,
     offset: [0, 0],
     history_height: 1,
+    updated_pixels: [],
+    full_render: true,
 };
 
 let palette = {
@@ -85,7 +84,8 @@ const updateField = async () => {
         } else {
             error("Can't update field");
         }
-    })
+    }).catch(error)
+    field.full_render = true;
     updateHistoryHeight();
 }
 
@@ -143,13 +143,17 @@ const updateFieldDelta = async () => {
         if (resp.status == 200) {
             resp.json().then((json) => {
                 if (json != null) {
+                    field.full_render = false;
                     for (let i = 0; i < json.length; i++) {
                         const ev = json[i];
                         if (ev.id < field.history_height || ev.width != field.width || ev.height != field.height) {
                             updateField();
+                            field.full_render = true;
                         } else {
-                            if (ev.x < ev.width && ev.y < ev.height)
+                            if (ev.x < ev.width && ev.y < ev.height) {
                                 field.pixels[ev.x + ev.y*field.width] = ev.color;
+                                field.updated_pixels.push([ev.x, ev.y]);
+                            }
                             field.history_height = Math.max(field.history_height, ev.id);
                         }
                     }
@@ -223,20 +227,34 @@ const putPixel = async (pos, color) => {
 // Update canvas image by field.pixels buffer
 const renderCanvas = () => {
     if (canvas != null) {
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        canvas.width = field.width;
-        canvas.height = field.height;
-        for (let x = 0; x < field.width; x++) {
-            for (let y = 0; y < field.height; y++) {
-                const index = field.pixels[x + y*field.width];
+        if (field.full_render) {
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            canvas.width = field.width;
+            canvas.height = field.height;
+            for (let x = 0; x < field.width; x++) {
+                for (let y = 0; y < field.height; y++) {
+                    const index = field.pixels[x + y*field.width];
+                    let color = "#222";
+                    if (index < palette.count) {
+                        color = rgbToHex(palette.colors[index]);
+                    }
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x, y, 1, 1);
+                }
+            }
+        } else {
+            for (let j = 0; j < field.updated_pixels.length; j++) {
+                const i = field.updated_pixels[j];
+                const index = field.pixels[i[0] + i[1]*field.width];
                 let color = "#222";
                 if (index < palette.count) {
                     color = rgbToHex(palette.colors[index]);
                 }
                 ctx.fillStyle = color;
-                ctx.fillRect(x, y, 1, 1);
+                ctx.fillRect(i[0], i[1], 1, 1);
             }
+            field.updated_pixels = [];
         }
     }
 }
@@ -679,19 +697,19 @@ updatePalette().then(() => {
 });
 updateSelectorTransform([0, 0]);
 updateField().then(() => {
-    const min_size = 2;//Math.floor(Math.min(cnv_cnt.offsetWidth / field.width, cnv_cnt.offsetHeight / field.height));
-    // console.log(min_size);
-    field.scale = min_size;
-    renderCanvas();
+    // const min_size = Math.floor(Math.min(cnv_cnt.offsetWidth / field.width, cnv_cnt.offsetHeight / field.height));
+    // // console.log(min_size);
+    // field.scale = min_size;
     field.offset[0] = cnv_cnt.offsetWidth / 2 - field.width*field.scale / 2;
     field.offset[1] = cnv_cnt.offsetHeight / 2 - field.height*field.scale / 2;
     updateCanvasTransform();
+    renderCanvas();
     updatePlaceholderTransform();
 });
 
 changeScreens();
 
-// Synchronize canvas every 2 seconds
+// Synchronize canvastrueevery 1 second
 setInterval(async () => updateFieldDelta().then(() => {
     updateCanvasTransform();
     renderCanvas();
@@ -699,7 +717,7 @@ setInterval(async () => updateFieldDelta().then(() => {
     cursor_pos[1] = Math.min(field.height, cursor_pos[1]);
     updatePlaceholderTransform();
     updatePartyList();
-}), 2000);
+}), 1000);
 
 // Update palette every 20 seconds
 setInterval(async () => updatePalette().then(() => {
