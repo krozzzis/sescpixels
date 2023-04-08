@@ -71,30 +71,34 @@ const error = async (text) => {
 }
 
 const updateField = async () => {
-    const resp = await fetch("/api/get_canvas");
-    if (resp.status == 200) {
-        const json = await resp.json();
-        if (json != null) {
-            field.pixels = json.pixels;
-            field.width = json.width;
-            field.height = json.height;
+    fetch("/api/get_canvas").then((resp) => {
+        if (resp.status == 200) {
+            resp.json().then((json) => {
+                if (json != null) {
+                    field.pixels = json.pixels;
+                    field.width = json.width;
+                    field.height = json.height;
+                } else {
+                    error("Can't update field");
+                }
+            })
         } else {
             error("Can't update field");
         }
-    } else {
-        error("Can't update field");
-    }
+    })
     updateHistoryHeight();
 }
 
 const updateHistoryHeight = async () => {
-    const resp = await fetch("/api/get_history_height");
-    if (resp.status == 200) {
-        const json = await resp.json();
-        if (json != null) {
-            field.history_height = json;
+    fetch("/api/get_history_height").then((resp) => {
+        if (resp.status == 200) {
+            resp.json().then((json) => {
+                if (json != null) {
+                    field.history_height = json;
+                }
+            })
         }
-    }
+    })
 }
 
 const updatePartyList = async () => {
@@ -135,25 +139,26 @@ const getPixelParty = async (x, y) => {
 }
 
 const updateFieldDelta = async () => {
-    const resp = await fetch(`/api/get_events/${field.history_height}`);
-    if (resp.status == 200) {
-        const json = await resp.json();
-        if (json != null) {
-            // console.log(json);
-            for (let i = 0; i < json.length; i++) {
-                const ev = json[i];
-                if (ev.id < field.history_height || ev.width != field.width || ev.height != field.height) {
-                    updateField();
-                } else {
-                    if (ev.x < ev.width && ev.y < ev.height)
-                        field.pixels[ev.x + ev.y*field.width] = ev.color;
-                    field.history_height = Math.max(field.history_height, ev.id);
+    fetch(`/api/get_events/${field.history_height}`).then((resp) => {
+        if (resp.status == 200) {
+            resp.json().then((json) => {
+                if (json != null) {
+                    for (let i = 0; i < json.length; i++) {
+                        const ev = json[i];
+                        if (ev.id < field.history_height || ev.width != field.width || ev.height != field.height) {
+                            updateField();
+                        } else {
+                            if (ev.x < ev.width && ev.y < ev.height)
+                                field.pixels[ev.x + ev.y*field.width] = ev.color;
+                            field.history_height = Math.max(field.history_height, ev.id);
+                        }
+                    }
                 }
-            }
+            })
+        } else {
+            error("Can't update field");
         }
-    } else {
-        error("Can't update field");
-    }
+    })
 }
 
 const updatePalette = async () => {
@@ -674,30 +679,31 @@ updatePalette().then(() => {
 });
 updateSelectorTransform([0, 0]);
 updateField().then(() => {
-    const min_size = Math.floor(Math.min(cnv_cnt.offsetWidth / field.width, cnv_cnt.offsetHeight / field.height));
+    const min_size = 2;//Math.floor(Math.min(cnv_cnt.offsetWidth / field.width, cnv_cnt.offsetHeight / field.height));
+    // console.log(min_size);
     field.scale = min_size;
+    renderCanvas();
     field.offset[0] = cnv_cnt.offsetWidth / 2 - field.width*field.scale / 2;
     field.offset[1] = cnv_cnt.offsetHeight / 2 - field.height*field.scale / 2;
     updateCanvasTransform();
-    renderCanvas();
     updatePlaceholderTransform();
 });
 
 changeScreens();
 
-// Synchronize canvas every 1 second
-setInterval(() => updateFieldDelta().then(() => {
+// Synchronize canvas every 2 seconds
+setInterval(async () => updateFieldDelta().then(() => {
     updateCanvasTransform();
     renderCanvas();
     cursor_pos[0] = Math.min(field.width, cursor_pos[0]);
     cursor_pos[1] = Math.min(field.height, cursor_pos[1]);
     updatePlaceholderTransform();
     updatePartyList();
-}), 1000);
+}), 2000);
 
-// Update palette every 10 seconds
-setInterval(() => updatePalette().then(() => {
+// Update palette every 20 seconds
+setInterval(async () => updatePalette().then(() => {
     updatePaletteElement();
     selected_color = Math.min(palette.count, selected_color);
     updateSelectedColor();
-}), 10000);
+}), 20000);

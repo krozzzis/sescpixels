@@ -254,7 +254,7 @@ const renderCanvas = () => {
 
 // Translate canvas element on the screen with constainments
 const updateCanvasTransform = () => {
-    const min_size = Math.floor(Math.min(cnv_cnt.offsetWidth / field.width, cnv_cnt.offsetHeight / field.height));
+    const min_size = Math.floor(Math.max(1, Math.min(cnv_cnt.offsetWidth / field.width, cnv_cnt.offsetHeight / field.height)));
     field.scale = min_size;
     field.offset[0] = cnv_cnt.offsetWidth / 2 - field.width*field.scale / 2;
     field.offset[1] = cnv_cnt.offsetHeight / 2 - field.height*field.scale / 2;
@@ -288,7 +288,7 @@ updateField().then(() => {
 updateUsersRank().then(() => updateUsersRankEl());
 updatePartyRank().then(() => updatePartyRankEl());
 
-// Synchronize canvas every 1 second
+// Synchronize canvas every 2 seconds
 setInterval(() => updateFieldDelta().then(() => {
     renderCanvas();
     updateCanvasTransform();
@@ -297,7 +297,7 @@ setInterval(() => updateFieldDelta().then(() => {
     // cursor_pos[0] = Math.min(field.width, cursor_pos[0]);
     // cursor_pos[1] = Math.min(field.height, cursor_pos[1]);
     // updatePlaceholderTransform();
-}), 1000);
+}), 2000);
 
-// Update palette every 10 seconds
-setInterval(() => updatePalette(), 10000);
+// Update palette every 20 seconds
+setInterval(() => updatePalette(), 20000);

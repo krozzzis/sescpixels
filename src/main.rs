@@ -1,7 +1,7 @@
 use std::{path::PathBuf, sync::Mutex};
 use std::collections::HashMap;
 
-use actix_web::{web, get, App, HttpResponse, HttpServer, Responder};
+use actix_web::{web, get, App, HttpResponse, HttpServer, Responder, middleware};
 use actix_files::{NamedFile, Files};
 
 use clap::Parser;
@@ -123,32 +123,19 @@ impl Db {
         self.conn.execute("UPDATE settings SET value = ? WHERE name = 'height'", [height])?;
         println!("Initializing canvas in db");
         self.conn.execute("BEGIN", [])?;
-        for y in 0..height {
-            for x in 0..width{
-                self.conn.execute("INSERT INTO pixels (x, y, color, owner, party) SELECT ?1, ?2, ?3, ?4, ?5 WHERE NOT EXISTS (SELECT (x, y) FROM pixels WHERE x=?1 AND y=?2);", [x, y, 0, 0, 0])?;
-            }
-        }
+        // for y in 0..height {
+        //     for x in 0..width{
+        //         self.conn.execute("INSERT INTO pixels (x, y, color, owner, party) SELECT ?1, ?2, ?3, ?4, ?5 WHERE NOT EXISTS (SELECT (x, y) FROM pixels WHERE x=?1 AND y=?2);", [x, y, 0, 0, 0])?;
+        //     }
+        // }
         self.conn.execute("INSERT INTO events (x, y, color, owner, party) VALUES (10000, 10000, 0, 0, 0)", [])?;
         self.conn.execute("END", [])?;
         Ok(())
     }
 
     fn get_canvas(&self) -> rusqlite::Result<Canvas> {
-        let mut stmt = self.conn.prepare("SELECT value FROM settings where name = 'width'")?;
-        let mut w = stmt.query([])?;
-        let width = if let Some(row) = w.next()? {
-            row.get(0)?
-        } else {
-            10
-        };
-
-        let mut stmt = self.conn.prepare("SELECT value FROM settings where name = 'height'")?;
-        let mut h = stmt.query([])?;
-        let height = if let Some(row) = h.next()? {
-            row.get(0)?
-        } else {
-            10
-        };
+        let width = self.canvas_width;
+        let height = self.canvas_height;
 
         let mut pixels = vec![0; width*height];
         let mut stmt = self.conn.prepare("SELECT x, y, color FROM pixels WHERE x < ?1 AND y < ?2")?;
@@ -252,6 +239,7 @@ impl Db {
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap_or(std::time::Duration::ZERO)
                 .as_millis() as usize;
+            self.conn.execute("INSERT INTO pixels (x, y, color, owner, party) SELECT ?1, ?2, ?3, ?4, ?5 WHERE NOT EXISTS (SELECT (x, y) FROM pixels WHERE x=?1 AND y=?2);", [event.x, event.y, 0, 0, 0])?;
             self.conn.execute("INSERT INTO events (time, x, y, color, owner, party) VALUES (?1, ?2, ?3, ?4, ?5, ?6)", (time, event.x, event.y, event.color, event.user.clone(), event.party.clone()))?;
             self.conn.execute("UPDATE pixels SET x=?1, y=?2, color=?3, owner=?4, party=?5 WHERE x=?1 AND y=?2", (event.x, event.y, event.color, event.user, event.party))?;
             self.update_history_height()?;
@@ -369,7 +357,7 @@ async fn get_users_rank(query: web::Path<usize>, state: web::Data<ServerState>) 
 async fn get_party_rank(query: web::Path<usize>, state: web::Data<ServerState>) -> actix_web::Result<impl Responder> {
     let rank = match state.db.lock().unwrap().get_party_rank(query.into_inner()) {
         Ok(a) => a,
-        Err(e) => return Ok(HttpResponse::NotFound().body("Can't get party rank")),
+        Err(e) => return Ok(HttpResponse::NotFound().body(format!("Can't get party rank: {}", e.to_string()))),
     };
     Ok(HttpResponse::Ok().json(rank))
 }
@@ -377,7 +365,7 @@ async fn get_party_rank(query: web::Path<usize>, state: web::Data<ServerState>) 
 async fn get_party_list(state: web::Data<ServerState>) -> actix_web::Result<impl Responder> {
     let list = match state.db.lock().unwrap().get_party_list() {
         Ok(a) => a,
-        Err(e) => return Ok(HttpResponse::NotFound().body("Can't get party list")),
+        Err(e) => return Ok(HttpResponse::NotFound().body(format!("Can't get party list: {}", e.to_string()))),
     };
     Ok(HttpResponse::Ok().json(list))
 }
@@ -486,6 +474,7 @@ async fn main() -> std::io::Result<()>{
     println!("Starting server");
     HttpServer::new(move || {
         App::new()
+            .wrap(middleware::Compress::default())
             .app_data(state.clone())
             .service(
                 Files::new("/static", "./static")
