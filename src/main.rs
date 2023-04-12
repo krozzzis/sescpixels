@@ -1,7 +1,7 @@
 use std::{path::PathBuf, sync::Mutex};
 use std::collections::HashMap;
 
-use actix_web::{web, get, App, HttpResponse, HttpServer, Responder, middleware};
+use actix_web::{web, get, App, HttpRequest, HttpResponse, HttpServer, Responder, middleware};
 use actix_files::{NamedFile, Files};
 
 use clap::Parser;
@@ -110,6 +110,14 @@ impl Db {
             "CREATE TABLE IF NOT EXISTS settings (
                 name     TEXT UNIQUE,
                 value    INTEGER
+            )",
+            (),
+        )?;
+        self.conn.execute(
+            "CREATE TABLE IF NOT EXISTS user_data (
+                name     TEXT,
+                ip       TEXT,
+                agent    TEXT
             )",
             (),
         )?;
@@ -304,10 +312,33 @@ impl Db {
         }))?.map(|x| x.unwrap()).collect();
         Ok(result)
     }
+
+    fn put_user_info(&self, name: &str, ip: &str, agent: &str) -> rusqlite::Result<()> {
+        self.conn.execute("INSERT INTO user_data (name, ip, agent) SELECT ?1, ?2, ?3 WHERE NOT EXISTS (SELECT (ip, agent) FROM user_data WHERE ip=?2 AND agent=?3);", [name, ip, agent])?;
+        Ok(())
+    }
+
+    fn get_user_info(&self, name: &str) -> rusqlite::Result<(String, String)> {
+        let mut stmt = self.conn.prepare("SELECT ip, agent FROM user_data WHERE name=?1 AND NOT ip IS NULL AND NOT agent IS NULL")?;
+        let mut c = stmt.query([name])?;
+        let data = if let Some(row) = c.next()? {
+            (
+                row.get(0)?,
+                row.get(1)?,
+            )
+        } else {
+            (
+                String::from("NaN"),
+                String::from("NaN"),
+            )
+        };
+        Ok(data)
+    }
 }
 
 struct ServerState {
     db: Mutex<Db>,
+    admin_key: String,
 }
 
 async fn get_canvas(state: web::Data<ServerState>) -> actix_web::Result<impl Responder> {
@@ -399,17 +430,45 @@ fn match_name(name: &str) -> bool {
     return true;
 } 
 
-async fn put_pixel(query: web::Json<PutPixelEvent>, state: web::Data<ServerState>) -> actix_web::Result<impl Responder> {
+async fn put_pixel(req: HttpRequest, query: web::Json<PutPixelEvent>, state: web::Data<ServerState>) -> actix_web::Result<impl Responder> {
     debug!("/api/put_pixel request");
     let event = query.into_inner();
     if !(match_name(&event.user) && match_name(&event.party) && event.user.chars().count() <= 24 && event.party.chars().count() <= 24) {
         return Ok(HttpResponse::BadRequest().body("Invalid username or party"));
     }
-    if let Err(_) = state.db.lock().unwrap().put_pixel(event) {
+    let mut guard = state.db.lock().unwrap();
+    if let Err(_) = guard.put_pixel(event.clone()) {
         Ok(HttpResponse::NotModified().body("Error occurse while putting pixel"))
     } else {
+        let ip = if let Some(a) = req.headers().get("x-forwarded-host") {
+            a.to_str().unwrap_or("NaN")
+        } else {
+            "NaN"
+        };
+        let agent = if let Some(a) = req.headers().get("user-agent") {
+            a.to_str().unwrap_or("NaN")
+        } else {
+            "NaN"
+        };
+        guard.put_user_info(
+            &event.user,
+            ip,
+            agent);
         Ok(HttpResponse::Ok().finish())
     }
+}
+
+#[get("/api/get_user_info/{key}/{name}")]
+async fn get_user_info(query: web::Path<(String, String)>, state: web::Data<ServerState>) -> actix_web::Result<impl Responder> {
+    let (key, name) = query.into_inner();
+    if key.trim().eq(&state.admin_key) {
+        let owner = match state.db.lock().unwrap().get_user_info(&name) {
+            Ok(a) => a,
+            Err(e) => return Ok(HttpResponse::NotFound().body(format!("Can't get user's data {}", e.to_string()))),
+        };
+        return Ok(HttpResponse::Ok().json(owner));
+    }
+    Ok(HttpResponse::NotFound().finish())
 }
 
 async fn play_page() -> impl Responder {
@@ -424,6 +483,15 @@ async fn tutorial_page() -> impl Responder {
     NamedFile::open_async("./static/tutorial.html").await
 }
 
+#[get("/inspect/{key}")]
+async fn inspect_page(query: web::Path<String>, state: web::Data<ServerState>) -> impl Responder {
+    if query.into_inner().trim().eq(&state.admin_key) {
+        NamedFile::open_async("./static/inspect.html").await
+    } else {
+        NamedFile::open_async("./static/play.html").await
+    }
+}
+
 #[derive(Parser, Debug)]
 struct CliArgs {
     #[arg(long, default_value="./db.db")]
@@ -434,6 +502,9 @@ struct CliArgs {
 
     #[arg(short, long, default_value="127.0.0.1")]
     addr: String,
+
+    #[arg(long, default_value="aboba")]
+    admin_key: String,
 
     #[arg(long, default_value="100")]
     width: usize,
@@ -465,6 +536,7 @@ async fn main() -> std::io::Result<()>{
     };
     let state = web::Data::new(ServerState {
         db: Mutex::new(db),
+        admin_key: args.admin_key,
     });
     let governor_conf = GovernorConfigBuilder::default()
         .per_millisecond(5)
@@ -485,6 +557,7 @@ async fn main() -> std::io::Result<()>{
             .service(get_party_rank)
             .service(get_pixel_owner)
             .service(get_pixel_party)
+            .service(get_user_info)
             .service(
                 web::scope("/api")
                     .route("/get_canvas", web::get().to(get_canvas))
@@ -494,6 +567,7 @@ async fn main() -> std::io::Result<()>{
                     .route("/get_party_list", web::get().to(get_party_list))
                     .route("/put_pixel", web::put().to(put_pixel))
             )
+            .service(inspect_page)
             .service(
                 web::scope("")
                     .route("/play", web::get().to(play_page))

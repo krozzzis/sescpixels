@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Play SESCPixels</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link href="/static/style.css" rel="stylesheet">
+  </head>
+  <body>
+    <header class="headerbar">
+      <a class="headerbar_title" href="/">SESCPixels</a>
+      <span class="headerbar_title" id="stat">|</span>
+      <input type="password" id="key" />
+      <!-- <a class="headerbar_button" href="/play">Play</a> -->
+      <!-- <a class="headerbar_button" href="/view">View</a> -->
+    </header>
+    <div id="canvas_container" class="canvas_play">
+      <div id="canvas_scroll">
+        <canvas id="canvas"></canvas>
+      </div>
+      <div id="selector"></div>
+      <div id="placeholder"></div>
+    </div>
+
+    <span id="coord">Coords: 1 : 1</span>
+
+    <div class="scale_control">
+      <a class="scale_btn" id="plus_scale" href="#"></a>
+      <a class="scale_btn" id="minus_scale" href="#"></a>
+    </div>
+
+    <div id="error_list">
+    </div>
+    <script src="/static/inspect.js"></script>
+  </body>
+</html>
